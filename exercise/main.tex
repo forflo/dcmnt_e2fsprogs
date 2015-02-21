@@ -15,6 +15,7 @@
 \usepackage{courier}
 \usepackage[table]{xcolor}
 \usepackage[utf8]{inputenc}
+\usepackage{graphicx}
 \usepackage{lmodern}
 \usepackage{amsmath}
 \usepackage{bytefield}
@@ -100,7 +101,7 @@ zusammenfassend ext2- ext3- oder ext4-Systeme.
 	weiterhin genutzt werden kann.
 
 \paragraph{findsuper}
-	Findet Ext2-Superblocks. (deprecated und lt. Dokumentation ``schnell zusammengehackt'')
+	Findet Ext2-Superblocks. Veraltet und lt. Dokumentation ``schnell zusammengehackt''.
 
 \subsection{Verwendete Programme}
 Im Rahmen dieses Dokuments werden lediglich die Programme \inlinebash$debugfs$
@@ -323,42 +324,51 @@ In dieser Aufgabe machen Sie sich mit dem Dateisystemdebugger
 		Eine Sinnhaftigkeit dieser Veränderung sei dahingestellt.
 \end{enumerate}
 
+
+\pagebreak{}
+
 \section{Anhang}
-\subsection{Highlevel Layout von Ext4}
+\subsection{Layout einer HDD}
 Im Folgenden wird der grundlegenden Aufbau von Datenträgern unter Linux dargestellt.
 \paragraph{}
 
-\begin{tabular}[c]{  l | l }
-	\cellcolor{grey} Offset & \cellcolor{grey} Inhalt \\ \hline
-	0x0000 & Beginn Masterboot Record \\
-	0x0200 & Beginn der ersten Partition \\
-	0x0400 & f \\
+\begin{figure}[h!]
+	\caption{Partitionslayout}
+	\includegraphics[scale=0.78]{images/mbr_partition_layout.png}
+	\label{fig:part_layout}
+\end{figure}
 
-\end{tabular}
+\pagebreak{}
 
-\subsection{MBR}
+\subsection{HDD-Partitionslayout}
 \paragraph{}
-\begin{tabular}[c]{  l | l | l }
-	\cellcolor{grey} Offset & \cellcolor{grey} Inhalt & \cellcolor{grey} Größe in Bytes \\ \hline
-	0x0000 & Bootloader & 446\\ \hline
-	0x01BE & 1. Partitionseintrag & 16 \\ \hline
-	0x01CE & 2. Partitionseintrag & 16 \\ \hline
-	0x01DE & 3. Partitionseintrag & 16 \\ \hline
-	0x01EE & 4. Partitionseintrag & 16 \\ \hline
-	0x01FE & 0x55 & 1\\ \hline
-	0x01FF & 0xAA & 1\\
-\end{tabular}
 
-\paragraph{}
-\begin{bytefield}[bitwidth=0.4cm]{32}
-	\bitheader{0-31} \\
-	\begin{rightwordgroup}{RTP \\ Header}
-		\bitbox{2}{V=2} & \bitbox{1}{P} & \bitbox{1}{X}
-		& \bitbox{4}{CC} & \bitbox{1}{M} & \bitbox{7}{PT}
-		& \bitbox{16}{sequence number} \\
-		\bitbox{32}{timestamp}
-	\end{rightwordgroup} \\
-\end{bytefield}
+\begin{table}[h!]
+	\begin{center}
+		
+
+		\begin{tabular}[c]{  l | l | l }
+		\cellcolor{grey} Offset & \cellcolor{grey} Inhalt & \cellcolor{grey} Größe in Bytes \\ \hline
+		0x0000 & Bootloader & 446\\ \hline
+		0x01BE & 1. Partitionseintrag & 16 \\ \hline
+		0x01CE & 2. Partitionseintrag & 16 \\ \hline
+		0x01DE & 3. Partitionseintrag & 16 \\ \hline
+		0x01EE & 4. Partitionseintrag & 16 \\ \hline
+		0x01FE & 0x55 & 1\\ \hline
+		0x01FF & 0xAA & 1\\
+		\end{tabular}
+	\end{center}
+	
+	\caption{MBR Layouttabelle}
+	\label{tab:mbr_layout_tbl}
+\end{table}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[scale=0.4]{images/mbr_layout.png}
+	\caption{MBR-Layout}
+	\label{fig:mbr_layout}
+\end{figure}
 
 \subsection{Blockgruppen Layout von Ext4}
 Die folgende Tabelle beschreibt den grundsätzlichen Aufbau einer ext4-Blockgruppe.
@@ -367,16 +377,32 @@ mithilfe des \inlinebash$dumpe2fs$-Kommandos ermitteln (vgl. auch 2.3).
 
 \paragraph{}
 
-\begin{tabular}[c]{| l | l |}
-	\hline
-	\cellcolor{grey} Daten & \cellcolor{grey} Größe \\ \hline
-	Füllbytes vor der Gruppe 0 & 1024 Bytes \\ \hline
-	Super Block & 1 Block (1KiB, 2KiB, 4KiB, \ldots, 64KiB) \\ \hline
-	Group-Descriptors & n Blöcke  \\ \hline
-	Reservierte Group-Descriptors & k Blöcke. Werden für's nachträgliche Vergrößern benötigt \\ \hline
-	Datenblock Bitmap & 1 Block \\ \hline
-	Inode Bitmap & 1 Block \\ \hline
-	Inode Tabelle & j Blöcke (Im Test-Dateisystem 8 1KiB-Blöcke) \\ \hline
-	Datenblöcke & Der Rest \\ \hline
-\end{tabular}
-\end{
+\begin{table}[h!]
+	\begin{center}
+		\begin{tabular}[c]{| l | l |}
+			\hline
+			\cellcolor{grey} Daten & \cellcolor{grey} Größe \\ \hline
+			Füllbytes vor der Gruppe 0 & 1024 Bytes \\ \hline
+			Super Block & 1 Block (1KiB, 2KiB, 4KiB, \ldots, 64KiB) \\ \hline
+			Group-Descriptors & n Blöcke  \\ \hline
+			Reservierte Group-Descriptors & k Blöcke. Werden für's nachträgliche Vergrößern benötigt \\ \hline
+			Datenblock Bitmap & 1 Block \\ \hline
+			Inode Bitmap & 1 Block \\ \hline
+			Inode Tabelle & j Blöcke (Im Test-Dateisystem 8 1KiB-Blöcke) \\ \hline
+			Datenblöcke & Der Rest \\ \hline
+		
+		\end{tabular}
+	\end{center}
+
+	\caption{Blockgruppen Layouttabelle}
+	\label{tab:block_layout}
+\end{table}
+
+\begin{figure}[h]
+	\centering
+	\caption{Blockgruppenlayout}
+	\includegraphics[scale=0.4]{images/block_group_layout.png}
+	\label{fig:block_group}
+\end{figure}
+
+\end{document}
