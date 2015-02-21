@@ -1,0 +1,145 @@
+= Einführung in e2fsprogs =
+
+Im ersten Kapitel dieser Einführung werden die 
+Werkzeuge des e2fsprogs-Pakets näher beleuchtet.
+
+Danach folgt die eigentliche Übung
+
+== Bestandteile des e2fsprogs-Pakets ==
+
+Die Tools - soweit nicht anders vermerkt - arbeiten 
+jeweils mit ext2, ext3 oder ext4 Dateisystemen.
+
+* e2fsk:
+	Überprüft ein extX-System auf Inkonsistenzen und behebt diese, wenn möglich
+
+* mke2fs:
+	Wird vom Frontendprogramm mkfs verwendet um neue extX-Dateisysteme anzulegen.
+
+* resize2fs:
+	Kann genutzt werden, um ein ext-Dateisystem an eine gewachsene oder
+	verkleinerte Partition anzupassen.
+
+* tune2fs:
+	Setzt oder modifiziert dateisystem parameter
+
+* dumpe2fs:
+	Schreibt Superblock- bzw. Blockgruppeninformationen auf die Standardausgabe.
+
+* filefrag:
+	Zeigt den Grad der Dateifragmentierung
+
+* e2label:
+	Verändert das Dateisystem-Label eines extX-Systems.
+
+* findfs:
+	Sucht nach einem Dateisystem mit dem Label l oder der UUID u.
+
+* e2freefrag:
+	Wie filefrag, jedoch mit dem Unterschied, dass nur die Fragmentierung
+	des freien Speicherplatzes aufgezeigt wird.
+
+* chattr:
+	Ähnlich zu chmod oder chown. Funktioniert auf vielen verschiedenen
+	Dateisystemen. 
+
+* e2image:
+	Speichert kritische extX-Metadaten in einer Datei. 
+
+* e4defrag:
+	Defragmentiert ein ext4-Dateisystem während es parallel
+	weiterhin genutzt werden kann.
+
+* findsuper:
+	Findet ext2 superblocks. (deprecated)
+
+== Übung ==
+
+=== Vorbereitungen des Test-Dateisystems ===
+
+Operationen auf Dateisysteme mit sog. Klempner-Kommandos
+sind gefährlich. Löscht man z.B. versehentlich einen Inode, so
+ist es nur noch schwer möglich die zugehörige Datei wiederher-
+zustellen. Es wird daher beschrieben, wie eine sog.
+Sandbox-Umgebung (also ein vom System abgekapseltes Dateisystem)
+eingerichtet werden kann. Die hier geschilderte Methode steht
+sofort unter GNU/Linux zur Verfügung, da sie Kernel-Bestandteil ist.
+
+* dd if=/dev/zero of=~/foo.disk count=1000
+	Erzeugt eine genullte Datei, bestehend aus 1000 Blöcken zu jeweils 0,5KiB.
+
+* losetup --list
+	Zeigt bereits vorhandene loop devices (footnote) an. Bereits vorhandene Loop-Geräte
+	müssen mittels losetup -d /dev/loop<X> ausgehängt werden. 
+
+* losetup /dev/loop0 ~/foo.disk
+	Erzeugt eine blockorientierte Gerätedatei, die alle Lese- und Schreiboperationen
+	auf die Datei ~/foo.disk abbildet. Das Kommando muss sodann mithilfe von
+	losetup --list überprüft werden. Der Vorgang war erfolgreich, wenn nun die
+	neue Konfiguration ausgegeben wird.
+
+* parted /dev/loop0 mklabel msdos
+* parted /dev/loop0 mkpart primary 0 500K
+	Das erste Kommando erzeugt einen neuen MBR und das zweite
+	richtet eine primäre Partition über die volle Länge des
+	virtuellen Blockgeräts ein.
+
+* mkfs.ext4 /dev/loop0p1
+	Erzeugt das zu untersuchende Dateisystem. Achtung: Hier
+	nicht /dev/loop0 verwenden, da dies keine Partition ist!
+
+Nun muss das frische Dateisystem nur noch eingebunden werden.
+Dies mit
+$ mkdir /mnt/foo
+$ mount /dev/loop0p1 /mnt/foo
+bewerkstelligt werden.
+
+=== Aufgabe 1 ===
+
+
+=== Aufgabe 2 ===
+
+(aufgaben:
+- Wo liegt der Superblock innerhalb des Dateisystems?
+- Wieviel Inodes wurden beim Erstellen des Dateisstems erzeugt?
+- Wie groß ist ein ext4-Datenblock und wie viele sind davon anfangs
+	tatsächlich durch Dateien nutzbar?
+- Erstellen Sie den angegebenen Verzeichnisbaum mithilfe der tools
+	touch, mkdir und nano/echo
+	
+	/+-> t1
+	 |	 +-> dirA
+	 |      +-> foo.txt "FOO.TXT"
+	 |   +-> a.txt "A"
+	 |   +-> b.txt "B" 
+	 |   +-> c.txt 
+	 +-> t2
+	 |   +-> dirB
+	 |   +-> dirC
+	 +-> foo.txt "FOO"
+
+	c.txt: Erstellen Sie diese Datei mithilfe von
+	$ echo abc{,,,}{,,,}{,,,}{,,,}{,,,}{,} > c.txt
+
+	* Starten Sie debugfs ($ debugfs /dev/loop0p1)
+	* Welcher Inode stellt den Ordner "t1" dar, welcher "t2"?
+		(Hinweis ls -l)
+	* Welcher Inode stellt die Verzeichniswurzel dar und 
+		auf welchem Block (Logische Block Nummer) liegt dieser?
+		(Hinweis imap <inode nummer>)
+	* Wechseln Sie mit "cd" in das Verzeichnis t1 und lassen
+		Sie sich alle Inodes anzeigen. Benutezn Sie das "cat"-
+		Kommando um sich den Inhalt der Dateien a.txt und b.txt
+		ausgeben zu lassen.
+	* Wo liegt der Block des Inodes für a.txt?
+	* Lassen Sie sich mittels "stat <inode nummer>" die Inode-
+		Daten für die Datei a.txt ausgeben.
+		Auf welchem Block liegen die Daten?
+	* Geben Sie den Datenblock mittels "block_dump" aus
+	* Wie viele Blocks benötigt die Datei c.txt
+		(Hinweis: blocks <inode nummer>)
+	* Geben sie auch noch einen der ausgegebenen Blöcke
+		auf der Standardausgabe aus. (block_dump)
+
+
+

@@ -1,0 +1,11 @@
+Diese Datei ist im Internet nicht zu finden.
+Vorgehen um diese zu generieren wird im Folgenden
+beschrieben.
+(1) Aktuelle Distribution von e2fsprogs klonen
+	$ git clone git://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
+(2) (Root vom geklonten Distributionsverzeichnis heißt $E2FS)
+	Ins Verzeichnis $E2FS/docs wechseln und das Kommando
+	$ texi2pdf libext2fs.texinfo
+	ausführen.
+	Natürlich muss hierzu das GNU-Paket "texinfo" installiert 
+	worden sein.

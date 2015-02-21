@@ -1,0 +1,7 @@
+[Weblinks Ext4-Übung]
+- https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout
+- https://ext4.wiki.kernel.org/index.php/Main_Page
+- https://ext4.wiki.kernel.org/index.php/Ext4_Design
+- http://e2fsprogs.sourceforge.net/
+- https://ext4.wiki.kernel.org/index.php/Frequently_Asked_Questions
+- https://ext4.wiki.kernel.org/index.php/Ext4_Howto

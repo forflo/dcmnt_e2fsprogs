@@ -1,0 +1,10 @@
+[Nützliche Notizen]
+* Im Superblock gibt es ein Feld mit der Bezeichnung
+	"First Block". Hierbei ist wirklich der erste
+	Block (Superblock) gemeint und nicht etwa der
+	Block, der auf den Superblock folgt.
+* Es ist duchaus möglich, dass in einer Blockgruppe
+	Datenblöcke _vor_ der Inode-Tabelle vorkommen.
+	Dies ist nicht verboten, obwohl es in der Layout-
+	Beschreibung im ext4-wiki so wirkt.
+
