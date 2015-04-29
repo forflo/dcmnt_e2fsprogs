@@ -1,0 +1,182 @@
+Lösungen e2fsprogs
+==================
+2.2 Allgemeine Fragen
+---------
+1) Größe: 1024 Bytes
+	Superblock beginnt ab Offset 400_(16) 1024_(10) 
+	der entsprechenden Partition. Dies kann wie folgt gezeigt werden. 
+	(Plattform x86-x64)
+
+	$ sudo dd if=/dev/loop0p1 bs=1024 status=none count=2 | hexdump
+	oder mit übersichtlicherer Ausgabe:
+
+	$ sudo dd if=/dev/loop0p1 bs=1024 status=none count=2 | \
+		hexdump -e '"%06_ax"' -e '" [sequential]-> "' -e '4/1 "%2x \
+		"' -e '" [uint32,hex]-> "' -e '/4 "%08X "' -e '" [sint32,dec]-> \
+		"' -e '/4 "%011i \n"'
+
+2) 488 Datenblöcke und 64 Inodes
+3) 1KiB = 1024 Byte. Theoretisch können
+	460 Blöcke genutzt werden. 488 - 24 reservierte Blöcke.
+4) 128 Bytes (vgl. Appendix)
+5) Nein, es gibt kein Journal, da der Speicherplatz hierfür
+	nicht ausreichend ist.
+
+
+2.3 Dumpe2fs
+------------
+1) 1024Bytes
+2) 1KiB*2^32=2^42=2^2*2^40=4TiB
+3) 2^32
+4) 8192*1024=8KiB*KiB=8MiB
+(vgl. Appendix)
+
+2.4 Einlesen des Superblocks
+----------------------------
+Siehe separates C-Programm
+
+2.5 Anlegen von Testdaten
+-------------------------
+<Keine Lösung notwendig>
+
+2.6 Debugfs
+-----------
+1) -
+2) 11
+3) 2. Anmerkung: Den Inode 0 gibt es nicht. Inode 1 ist eine Liste
+	von defekten Blöcken.
+4) a) Ausgabe vom (debugfs) Kommando ls -l:
+     12   40700 (2)   1000      0    1024  7-Feb-2015 20:12 .
+      2   40755 (2)   1000      0    1024  7-Feb-2015 20:04 ..
+     14   40700 (2)   1000      0    1024  7-Feb-2015 20:01 dirA
+     19  100600 (1)   1000   1000       2  7-Feb-2015 20:02 a.txt
+     22  100600 (1)   1000   1000       2  7-Feb-2015 20:02 b.txt
+     17  100600 (1)   1000   1000    8192  7-Feb-2015 20:04 c.txt
+   b) (debugfs $) cat a.txt
+		oder (debugfs $) cat <19>
+	  (debugfs $) cat b.txt
+		oder (debugfs $) cat <22>
+5) Ausgabe von (debugfs $) imap <19>
+	Inode 19 is part of block group 0
+		located at block 38, offset 0x0100
+
+	Antwort folglich: Inode liegt auf Block 38. 
+	Es handelt sich um den dritten Inode im Block 38 
+	(wegen Offset=0x0100 und sb.inode_size = 128 Bytes).
+6): Ausgabe von (debugfs $) stat <19>
+	---
+	Inode: 19   Type: regular    Mode:  0600   Flags: 0x80000
+	Generation: 3079754849    Version: 0x00000001
+	User:  1000   Group:  1000   Size: 2
+	File ACL: 0    Directory ACL: 0
+	Links: 1   Blockcount: 2
+	Fragment:  Address: 0    Number: 0    Size: 0
+	ctime: 0x54d66141 -- Sat Feb  7 20:02:25 2015
+	atime: 0x54d66142 -- Sat Feb  7 20:02:26 2015
+	mtime: 0x54d66141 -- Sat Feb  7 20:02:25 2015
+	EXTENTS:
+	(0):31
+	---
+
+	Antwort folglich: Die Daten liegen auf Block 31. 
+		Dies ist überprüfbar mittels
+		$ sudo dd if=/dev/loop0p1 bs=1024 count=1 skip=31 status=none | \
+			hexdump
+	Anmerkung: Wenn es nicht viele Blockdeskriptoren gibt,
+		wie in diesem Fall (es gibt nur einen), dann kann
+		es durchaus passieren, dass Datenblöcke vorkommen, deren
+		Position im Dateisystem noch _vor_ der Inode-Tabelle ist.
+
+7) (debugfs $) block_dump 31
+	0000  410a 0000 0000 0000 0000 0000 0000 0000  A...............
+	0020  0000 0000 0000 0000 0000 0000 0000 0000  ................
+	*
+
+8) (debufs $) blocks <17>
+	46 47 32 22 23 24 25 26
+
+	Antwort folglich: c.txt benötigt 8 Blocks
+
+9) (debugfs $) block_dump 26
+	0000  6162 6320 6162 6320 6162 6320 6162 6320  abc abc abc abc 
+	*
+
+2.7 Inodes
+----------
+1) Schritte:
+	a) Mittels debugfs den Inode für Datei "a.txt" bestimmen
+		=> Inode 19
+	b) Mittels debugfs und dem dortigen Kommando imap die
+		Position dieses Inodes bestimmen.
+		=> Position: Block #38, mit Offset 0x0100
+	c) $ sudo dd if=/dev/loop0p1 bs=1 count=128 \
+			skip=$((1024*38+256)) status=none | \
+			hexdump
+		
+	Anmerkung: c) kann verifiziert werden, indem 
+		folgendes Kommando verwendet wird.
+
+		$ sudo dd if=/dev/loop0p1 bs=1 count=2 \
+			skip=$((1024*38+256+2)) status=none | \
+			hexdump
+		
+		Hiermit wird die UID des Besitzers ausgegeben.
+		(vgl. https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Inode_Table)
+
+2) Siehe C-Programm
+3) Siehe C-Programm
+
+Appendix
+--------
+A) Ausgabe des Kommandos $ sudo dumpe2fs /dev/loop0p
+
+Filesystem volume name:   <none>
+Last mounted on:          <not available>
+Filesystem UUID:          37216b1a-2915-40df-94b2-f327e632630a
+Filesystem magic number:  0xEF53
+Filesystem revision #:    1 (dynamic)
+Filesystem features:      ext_attr resize_inode dir_index filetype extent flex_bg sparse_super huge_file uninit_bg dir_nlink extra_isize
+Filesystem flags:         signed_directory_hash 
+Default mount options:    user_xattr acl
+Filesystem state:         clean
+Errors behavior:          Continue
+Filesystem OS type:       Linux
+Inode count:              64
+Block count:              488
+Reserved block count:     24
+Free blocks:              460
+Free inodes:              53
+First block:              1
+Block size:               1024
+Fragment size:            1024
+Reserved GDT blocks:      1
+Blocks per group:         8192
+Fragments per group:      8192
+Inodes per group:         64
+Inode blocks per group:   8
+Flex block group size:    16
+Filesystem created:       Mon Feb  2 16:44:24 2015
+Last mount time:          n/a
+Last write time:          Mon Feb  2 16:44:24 2015
+Mount count:              0
+Maximum mount count:      -1
+Last checked:             Mon Feb  2 16:44:24 2015
+Check interval:           0 (<none>)
+Lifetime writes:          123 kB
+Reserved blocks uid:      0 (user root)
+Reserved blocks gid:      0 (group root)
+First inode:              11
+Inode size:	          128
+Default directory hash:   half_md4
+Directory Hash Seed:      fd95b568-7623-4681-a47f-211fbb558dd5
+
+
+Group 0: (Blocks 1-487)
+  Checksum 0xf0fd, unused inodes 53
+  Primary superblock at 1, Group descriptors at 2-2
+  Reserved GDT blocks at 3-3
+  Block bitmap at 4 (+3), Inode bitmap at 20 (+19)
+  Inode table at 36-43 (+35)
+  460 free blocks, 53 free inodes, 2 directories, 53 unused inodes
+  Free blocks: 19, 21-35, 44-487
+  Free inodes: 12-64
