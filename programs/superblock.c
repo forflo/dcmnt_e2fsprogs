@@ -36,8 +36,11 @@ int main(int argc, char **argv){
 	/* Remember each hexadecimal integer will be represented in reverse
 	 	byte order because of the x86-endianness (little endian) */
 	printf("UUID des Dateisystems: %08X-%08X-%08X-%08X\n", 
-			*(((uint32_t *) super->s_uuid) + 0), *(((uint32_t *) super->s_uuid) + 1),
-			*(((uint32_t *) super->s_uuid) + 2), *(((uint32_t *) super->s_uuid) + 3));
+			/* Read 4 4-byte words */
+			*(((uint32_t *) super->s_uuid) + 0),
+			*(((uint32_t *) super->s_uuid) + 1),
+			*(((uint32_t *) super->s_uuid) + 2), 
+			*(((uint32_t *) super->s_uuid) + 3));
 	printf("ID des Ersteller-OSes: %s\n", 
 			(super->s_creator_os == 0 ? OS_L : OS_O));
 

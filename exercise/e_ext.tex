@@ -19,7 +19,6 @@
 \usepackage{lmodern}
 \usepackage{amsmath}
 \usepackage{bytefield}
-%\usepackage{dirtree}
 \usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
 
 \definecolor{lightblue}{rgb}{0.2925,0.6381,0.65}
@@ -46,7 +45,6 @@
 \begin{document}
 \title{\color{black} Ext4-Übung}
 \author{\color{darkblue} Florian Mayer}
-\date{\color{lightblue} Oktober 2014}
 \maketitle
 
 \tableofcontents
@@ -151,7 +149,7 @@ sofort unter GNU/Linux zur Verfügung, da sie integraler Kernel-Bestandteil ist.
 	Erzeugt das zu untersuchende Dateisystem. Achtung: Hier darf
 	/dev/loop0 nicht verwendet werden, da dies keine Partition ist!
 	Die Gerätedatei der Partition (\emph{/dev/loop0p1}) wird automatisch
-	vom System erkannt und steht daher sofort nach erzeugung der
+	vom System erkannt und steht daher sofort nach Erzeugung der
 	Partition zur Verfügung.
 
 \item
@@ -167,52 +165,37 @@ $ mount /dev/loop0p1 /mnt/foo
 \subsection{Allgemeine Fragen}
 \begin{enumerate}
 \item Wo liegt der Superblock, bzw. ab welchem Offset beginnt dieser.
-	Wie groß ist er?
+	Wie groß ist er? Hinweis: Der Superblock enthält eine sog. Magic-Number
+	die 2 Bytes groß ist und ab Offset 0x38 beginnt.
 \item Wieviel Inodes und Datenblöcke wurden beim Erstellen des Dateisystems erzeugt?
+	Hinweis: Die Ausgabe des \inlinebash$mkfs.ext4$ Kommandos hilft. Alternativ 
+	kann auch \inlinebash$dumpe2fs$ benutzt werden.
 \item Wie groß ist ein Ext4-Datenblock und wie viele sind davon anfangs
-	tatsächlich durch Dateien nutzbar?
-\item Wieviele Bytes ist ein Inode groß?
-\item Gibt es ein Journal?
+	tatsächlich durch Dateien nutzbar? Hinweis: Nutzen Sie \inlinebash$dumpe2fs$
+\item Wieviele Bytes ist ein Inode groß? Hinweis: Nutzen Sie wieder \inlinebash$dumpe2fs$
 
 \end{enumerate}
 
 \subsection{Dumpe2fs}
-Im Folgenden ist eine Ausgabe des \inlinebash$dumpe2fs$-Kommandos
-	aufgeführt. Beantworten Sie damit die folgenden Fragen unter der Annahme,
-	dass Sie sich auf einem \emph{32-Bit-System} befinden.
+	Beantworten Sie mithilfe des Programms \inlinebash$dumpe2fs$ 
+	die folgenden Fragen unter der Annahme,
+	dass Sie sich auf einem \emph{32-Bit-System} 
+	befinden\footnote{Tatsächlich werden Sie jedoch auf 
+		einem 64-Bit-System arbeiten}.
 	\begin{enumerate}
 		\item Über wie viele Bytes erstreckt sich ein ext4-Block?
-		\item Wie groß kann das Dateisystem maximal werden?
-		\item Wie viele Inodes kann es maximal geben?
+			Hinweis: Sie müssen nach ``Block size:'' suchen.
+		\item Wie groß kann das Dateisystem maximal werden? 
+			Hinweis: Multiplizieren Sie die Blockgröße 
+			mit der maximalen Anzahl der Blöcke. Beachten Sie die Wortgröße!
+		\item Wie viele Inodes kann es maximal geben? Hinweis: 
+			Jeder Inode hat eine 4-Byte-Inode-Nummer und keine zwei Inodes
+			dürfen dieselbe ID tragen.
 		\item Wie groß kann eine Datei, die in eine einzige Block-Gruppe passt,
-			maximal sein?
+			maximal sein? Hinweis: Die Ausgabe von \inlinebash$dumpe2fs$ liefert
+			einen Eintrag, der auf die Menge der Datenblöcke innerhalb einer
+			Blockgruppe Aufschluss gibt.
 	\end{enumerate}
-
-	\begin{lstlisting}[style=bash]
-$ dumpe2fs /dev/loop0p1
-dumpe2fs 1.42.12 (29-Aug-2014)
-[....]
-Default mount options:    user_xattr acl
-Filesystem state:         clean
-Errors behavior:          Continue
-Filesystem OS type:       Linux
-Inode count:              64
-Block count:              488
-Reserved block count:     24
-Free blocks:              460
-Free inodes:              53
-First block:              1
-Block size:               1024
-Fragment size:            1024
-Reserved GDT blocks:      1
-Blocks per group:         8192
-Fragments per group:      8192
-Inodes per group:         64
-Inode blocks per group:   8
-[...]
-	\end{lstlisting}
-
-
 
 \subsection{Einlesen des Superblocks}
 Schreiben Sie ein C-Programm mit dem sie den Superblock einlesen und
@@ -229,13 +212,69 @@ einige Informationen auf der Kommandozeile ausgeben.
 	\item Betriebssystem des Erstellers
 \end{itemize}
 
+\begin{lstlisting}[style=c]
+/* Blaupause fuer die Loesung */
+#include <ext2fs/ext2fs.h>
+#include <ext2fs/ext2_fs.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <et/com_err.h>
+#include <stdint.h>
+
+static const char DEV[] = "/dev/loop0p1";
+static const char OS_L[] = "LINUX";
+static const char OS_O[] = "OTHER";
+
+int main(int argc, char **argv){
+	errcode_t err;
+	ext2_filsys fs;
+	struct ext2_super_block *super;
+
+	/* Oeffnen des Dateisystemhandles "fs" mithilfe der Funktion ext2fs_open.
+		Signatur der Funktion ist: errcode_t ext2fs_open(const char *name,
+			int flags, int superblock, int block_size, io_manager manager,
+			ext2_filsys *filsys);
+		Fuer "flags" koennen Sie EXT2_FLAG_RW, fuer "superblock" und "block_size" 0
+		und fuer "io_manager" koennen Sie unix_io_manager einsetzen. */
+	??? 
+
+	if (err){
+		if (err == 13) {
+			printf("[ext2fs_open] Insufficient permissions\n");
+		} else {
+			printf("[ext2fs_open] Error number: %ld\n", err);
+		}
+		return EXIT_FAILURE;
+	}
+	
+	super = fs->super;	
+
+	/* Hier printf-Statements der folgenden Member von super:
+		super->s_inodes_count super->s_blocks_count
+		super->s_first_data_block super->s_free_inodes_count
+		super->s_free_blocks_count super->s_magic
+		super->s_uuid[] super->s_creator_os */
+	???
+
+	/* Schliessen des Dateisystem-Handles mittels ext2fs_close(fs) */
+	???
+
+	if (err){
+		printf("[ext2fs_close] Error number: %ld\n", err);
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+\end{lstlisting}
+
 \subsection{Anlegen von Testdaten}
 
 \begin{enumerate}
 \item Erstellen Sie im neuen Dateisystem den angegebenen Verzeichnisbaum 
 	mithilfe der Werkzeuge \inlinebash$touch$, \inlinebash$mkdir$ und 
 	\inlinebash$nano$\slash\inlinebash$echo$. Hierfür steht ihnen ein Bash-Skript 
-	zur Verfügung. Der Aufruf unten in der Baumansicht aufgeführt.
+	zur Verfügung. Der Aufruf ist unten in der Baumansicht aufgeführt.
 
 \begin{verbatim}
 /+-> t1
@@ -249,30 +288,7 @@ einige Informationen auf der Kommandozeile ausgeben.
  |   +-> dirC
  +-> foo.txt -- Inhalt "FOO"
  
-$ cd /mnt/foo && ./
 \end{verbatim}
-
-%\dirtree{%
-%.1 /.
-%.2 t1.
-%.3 dirA.
-%.4 foo.txt "FOO.TXT".
-%.3 a.txt "A".
-%.3 b.txt "B".
-%.3 c.txt.
-%.2 t2.
-%.3 dirB.
-%.3 dirC
-%.2 foo.txt "FOO".
-%}
-
-	c.txt: Erstellen Sie diese Datei mithilfe von
-	\inlinebash$echo abc{,,,}{,,,}{,,,}{,,,}{,,,}{,} > c.txt$\footnote{Das Kommando 
-	schreibt 2048 mal die Zeichenkette ``abc'' in die Datei, wobei die einzelnen
-	Strings durch Leerzeichen getrennt sind (bis auf den letzten). 
-	Dies erzeugt eine Datei mit \emph{exakt} 8*1024 Bytes.
-	Das verwendete Konstrukt nennt sich \emph{Brace-Expansion} 
-	und ist Sprachmittel der Bash.}
 \end{enumerate}
 
 \subsection{Debugfs}
@@ -306,7 +322,9 @@ In dieser Aufgabe machen Sie sich mit dem Dateisystemdebugger
 \subsection{Inodes}
 \begin{enumerate}
 	\item Lassen Sie sich Inode der Datei \emph{a.txt} mithilfe der Kommandos \inlinebash$dd$
-		und \inlinebash$hexdump$ anzeigen.
+		und \inlinebash$hexdump$ anzeigen. Hinweis: Suchen Sie zunächst die Nummer des Inodes.
+		Nun können Sie die Blocknummer des Inodes und dessen Offset zu diesem Block ermitteln.
+		Erinnern Sie sich auch daran, dass ein Inode typischerweise 128 Byte groß sein wird!
 	\item Schreiben Sie ein C-Programm mit dem Sie sich die folgenden Daten
 		des Inodes der Datei \emph{c.txt} ausgeben lassen.
 		\begin{itemize}
@@ -324,60 +342,13 @@ In dieser Aufgabe machen Sie sich mit dem Dateisystemdebugger
 		Eine Sinnhaftigkeit dieser Veränderung sei dahingestellt.
 \end{enumerate}
 
-
-\pagebreak{}
-
-\section{Anhang}
-\subsection{Layout einer HDD}
-Im Folgenden wird der grundlegenden Aufbau von Datenträgern unter Linux dargestellt.
-\paragraph{}
-
-\begin{figure}[h!]
-	\caption{Partitionslayout}
-	\includegraphics[scale=0.78]{images/mbr_partition_layout.png}
-	\label{fig:part_layout}
-\end{figure}
-
-\pagebreak{}
-
-\subsection{HDD-Partitionslayout}
-\paragraph{}
-
-\begin{table}[h!]
-	\begin{center}
-		
-
-		\begin{tabular}[c]{  l | l | l }
-		\cellcolor{grey} Offset & \cellcolor{grey} Inhalt & \cellcolor{grey} Größe in Bytes \\ \hline
-		0x0000 & Bootloader & 446\\ \hline
-		0x01BE & 1. Partitionseintrag & 16 \\ \hline
-		0x01CE & 2. Partitionseintrag & 16 \\ \hline
-		0x01DE & 3. Partitionseintrag & 16 \\ \hline
-		0x01EE & 4. Partitionseintrag & 16 \\ \hline
-		0x01FE & 0x55 & 1\\ \hline
-		0x01FF & 0xAA & 1\\
-		\end{tabular}
-	\end{center}
-	
-	\caption{MBR Layouttabelle}
-	\label{tab:mbr_layout_tbl}
-\end{table}
-
-\begin{figure}[h!]
-	\centering
-	\includegraphics[scale=0.4]{images/mbr_layout.png}
-	\caption{MBR-Layout}
-	\label{fig:mbr_layout}
-\end{figure}
-
-\subsection{Blockgruppen Layout von Ext4}
+\section{Blockgruppen Layout von Ext4}
 Die folgende Tabelle beschreibt den grundsätzlichen Aufbau einer ext4-Blockgruppe.
 Die Menge der Blöcke, die in einer Blockgruppe enthalten sind, lässt sich leicht
 mithilfe des \inlinebash$dumpe2fs$-Kommandos ermitteln (vgl. auch 2.3).
-
 \paragraph{}
 
-\begin{table}[h!]
+\begin{table}[h]
 	\begin{center}
 		\begin{tabular}[c]{| l | l |}
 			\hline

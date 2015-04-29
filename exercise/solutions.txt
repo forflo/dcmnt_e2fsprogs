@@ -3,7 +3,7 @@ Lösungen e2fsprogs
 2.2 Allgemeine Fragen
 ---------
 1) Größe: 1024 Bytes
-	Superblock beginnt ab Offset 400_(16) 1024_(2) 
+	Superblock beginnt ab Offset 400_(16) 1024_(10) 
 	der entsprechenden Partition. Dies kann wie folgt gezeigt werden. 
 	(Plattform x86-x64)
 
@@ -39,7 +39,7 @@ Siehe separates C-Programm
 -------------------------
 <Keine Lösung notwendig>
 
-2.5 Debugfs
+2.6 Debugfs
 -----------
 1) -
 2) 11
@@ -106,7 +106,7 @@ Siehe separates C-Programm
 1) Schritte:
 	a) Mittels debugfs den Inode für Datei "a.txt" bestimmen
 		=> Inode 19
-	b) Mitteld debugfs und dem dortigen Kommando imap die
+	b) Mittels debugfs und dem dortigen Kommando imap die
 		Position dieses Inodes bestimmen.
 		=> Position: Block #38, mit Offset 0x0100
 	c) $ sudo dd if=/dev/loop0p1 bs=1 count=128 \
