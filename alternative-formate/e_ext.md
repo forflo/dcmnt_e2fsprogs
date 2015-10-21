@@ -128,22 +128,24 @@ integraler Kernel-Bestandteil ist.
     /dev/loop0 nicht verwendet werden, da dies keine Partition ist! Die
     Gerätedatei der Partition (*/dev/loop0p1*) wird automatisch vom
     System erkannt und steht daher sofort nach Erzeugung der Partition
-    zur Verfügung.
+    zur Verfügung. Hinweis: Merken Sie sich die Ausgabe des Kommandos!
+    Sie werden Sie in einer der Übungen benötigen!
 
 -   Nun muss das frische Dateisystem nur noch eingebunden werden:
 
     ``` {style="bash"}
-    $ sudo su
-    $ mkdir /mnt/foo
-    $ mount /dev/loop0p1 /mnt/foo
+    $ sudo mkdir /mnt/foo
+    $ sudo mount /dev/loop0p1 /mnt/foo
     ```
 
 Allgemeine Fragen
 -----------------
 
-1.  Wo liegt der Superblock, bzw. ab welchem Offset beginnt dieser. Wie
-    groß ist er? Hinweis: Der Superblock enthält eine sog. Magic-Number
-    die 2 Bytes groß ist und ab Offset 0x38 beginnt.
+1.  Ab welchem Offset beginnt der Superblock und wie groß ist er?
+    Hinweis: Der Superblock beginnt typischerweise unmittelbar nach dem
+    nullten Block, also im ersten (vgl. hierzu Kapitel 2.2 “Layout” [der
+    offiziellen
+    Dokumentation](https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Layout))
 
 2.  Wieviel Inodes und Datenblöcke wurden beim Erstellen des
     Dateisystems erzeugt? Hinweis: Die Ausgabe des $mkfs.ext4$ Kommandos
@@ -151,6 +153,7 @@ Allgemeine Fragen
 
 3.  Wie groß ist ein Ext4-Datenblock und wie viele sind davon anfangs
     tatsächlich durch Dateien nutzbar? Hinweis: Nutzen Sie $dumpe2fs$
+    und suchen Sie nach dem Feld “Block size”!
 
 4.  Wieviele Bytes ist ein Inode groß? Hinweis: Nutzen Sie wieder
     $dumpe2fs$
@@ -160,22 +163,23 @@ Dumpe2fs
 
 Beantworten Sie mithilfe des Programms $dumpe2fs$ die folgenden Fragen
 unter der Annahme, dass Sie sich auf einem *32-Bit-System* befinden[^1].
+(Verwenden Sie für diese Übung Kapitel 2.1 [der offiziellen
+ext4-Dokumentation](https://ext4.wiki.kernel.org/index.php/Ext4_Disk_Layout#Blocks).
+Die relevanten Daten finden in der Tabelle “File System Maximums”)
 
-1.  Über wie viele Bytes erstreckt sich ein ext4-Block? Hinweis: Sie
-    müssen nach “Block size:” suchen.
+1.  Wie groß kann das Dateisystem maximal werden? Hinweis:
+    Multiplizieren Sie die Blockgröße (vgl. Lösung der Aufgabe 2.2.3)
+    mit der maximalen Anzahl der Blöcke. Beachten Sie die Wortgröße!
 
-2.  Wie groß kann das Dateisystem maximal werden? Hinweis:
-    Multiplizieren Sie die Blockgröße mit der maximalen Anzahl der
-    Blöcke. Beachten Sie die Wortgröße!
+2.  Wie viele Inodes kann es maximal geben? Hinweis: Jeder Inode hat
+    (unter x86) eine 4-Byte-Inode-Nummer und keine zwei Inodes dürfen
+    dieselbe Inode-Nummer haben.
 
-3.  Wie viele Inodes kann es maximal geben? Hinweis: Jeder Inode hat
-    eine 4-Byte-Inode-Nummer und keine zwei Inodes dürfen dieselbe ID
-    tragen.
-
-4.  Wie groß kann eine Datei, die in eine einzige Block-Gruppe passt,
+3.  Wie groß kann eine Datei, die in eine einzige Block-Gruppe passt,
     maximal sein? Hinweis: Die Ausgabe von $dumpe2fs$ liefert einen
     Eintrag, der auf die Menge der Datenblöcke innerhalb einer
-    Blockgruppe Aufschluss gibt.
+    Blockgruppe Aufschluss gibt. Nutzen Sie diesen Wert und erinnern Sie
+    sich an die Blockgröße.
 
 Einlesen des Superblocks
 ------------------------
@@ -218,11 +222,9 @@ int main(int argc, char **argv){
     struct ext2_super_block *super;
 
     /* Oeffnen des Dateisystemhandles "fs" mithilfe der Funktion ext2fs_open.
-        Signatur der Funktion ist: errcode_t ext2fs_open(const char *name,
-            int flags, int superblock, int block_size, io_manager manager,
-            ext2_filsys *filsys);
-        Fuer "flags" koennen Sie EXT2_FLAG_RW, fuer "superblock" und "block_size" 0
-        und fuer "io_manager" koennen Sie unix_io_manager einsetzen. */
+        Hinweis: Verwenden Sie Kapitel 4 als Referenz und nutzen Sie
+        EXT2_FLAG_RW, 0, 0, unix_io_manager als Argument 2 - 5 fuer die Funktion!
+        Argument 1 und 6 muessen Sie selbst herausfinden. */
     ??? 
 
     if (err){
@@ -236,21 +238,27 @@ int main(int argc, char **argv){
     
     super = fs->super;  
 
-    /* Hier printf-Statements der folgenden Member von super:
-        super->s_inodes_count super->s_blocks_count
-        super->s_first_data_block super->s_free_inodes_count
-        super->s_free_blocks_count super->s_magic
-        super->s_uuid[] super->s_creator_os */
+    /* Hinweis: Hier printf-Statements der folgenden Member von super:
+        super->s_inodes_count (integer)
+        super->s_blocks_count (integer)
+        super->s_first_data_block (integer)
+        super->s_free_inodes_count (integer)
+        super->s_free_blocks_count (integer)
+        super->s_magic (%02X)
+        super->s_uuid[] (verwenden Sie *(((uint32_t *) super->s_uuid) + <Index>)
+        super->s_creator_os 
+            (integer. Geben Sie "Linux" aus, 
+            wenn Wert gleich 0, sonst "Other") */
     ???
 
-    /* Schliessen des Dateisystem-Handles mittels ext2fs_close(fs) */
+    /* Schliessen des Dateisystem-Handles mittels ext2fs_close(fs). 
+        Nuten Sie die in Kapitel 4 dokumentierte Funktion ext2fs_close(ext2_filsys FS)*/
     ???
 
     if (err){
         printf("[ext2fs_close] Error number: %ld\n", err);
         return EXIT_FAILURE;
     }
-
     return EXIT_SUCCESS;
 }
 ```
@@ -259,16 +267,17 @@ Anlegen von Testdaten
 ---------------------
 
 1.  Erstellen Sie im neuen Dateisystem den angegebenen Verzeichnisbaum
-    mithilfe der Werkzeuge $touch$, $mkdir$ und $nano$/$echo$. Hierfür
-    steht ihnen ein Bash-Skript zur Verfügung. Der Aufruf ist unten in
-    der Baumansicht aufgeführt.
+    Hierfür steht ihnen ein Bash-Skript zur Verfügung (vgl.
+    scripts/file\_tree.sh) Der Aufruf lautet $sudo ./file_tree.sh$. Das
+    Skript wechselt automatisch ins richtige Verzeichnis und wieder
+    zurück. Der folgende Baum wird generiert:
 
         /+-> t1
          |   +-> dirA
          |      +-> foo.txt  -- Inhalt: "FOO.TXT"
          |   +-> a.txt -- Inhalt "A"
          |   +-> b.txt -- Inhalt "B" 
-         |   +-> c.txt 
+         |   +-> c.txt -- 2048 mal "abc "
          +-> t2
          |   +-> dirB
          |   +-> dirC
@@ -281,7 +290,7 @@ Debugfs
 In dieser Aufgabe machen Sie sich mit dem Dateisystemdebugger $debugfs$
 vertraut.
 
-1.  Starten Sie debugfs ($debugfs /dev/loop0p1$).
+1.  Starten Sie debugfs ($sudo debugfs /dev/loop0p1$).
 
 2.  Welcher Inode stellt das Verzeichnis “t1” dar, welcher “t2”?
     (Hinweis $ls -l$[^2])
@@ -310,31 +319,81 @@ vertraut.
 Inodes
 ------
 
-1.  Lassen Sie sich Inode der Datei *a.txt* mithilfe der Kommandos $dd$
-    und $hexdump$ anzeigen. Hinweis: Suchen Sie zunächst die Nummer des
-    Inodes. Nun können Sie die Blocknummer des Inodes und dessen Offset
-    zu diesem Block ermitteln. Erinnern Sie sich auch daran, dass ein
-    Inode typischerweise 128 Byte groß sein wird!
+1.  Lassen Sie sich den Inode der Datei *a.txt* mithilfe der Kommandos
+    $dd$ und $hexdump$ anzeigen. Hinweis: Suchen Sie zunächst die Nummer
+    des Inodes. Nun können Sie die Blocknummer des Inodes und dessen
+    Offset zu diesem Block ermitteln. Erinnern Sie sich auch daran, dass
+    ein Inode typischerweise 128 Byte groß sein wird!
 
 2.  Schreiben Sie ein C-Programm mit dem Sie sich die folgenden Daten
-    des Inodes der Datei *c.txt* ausgeben lassen.
+    des Inodes der Datei *c.txt* ausgeben lassen. Nutzen Sie dazu die
+    angegebene Vorlage und Kapitel 4.3 und achten Sie auf die
+    Fragezeichen im Code.
 
     -   User-ID
 
-    -   Erstellungsdatum (nicht formatiert, am besten in hex ausgeben)
+    -   Modifikationsdatum (nur als Integer ausgeben)
 
-    -   Zugriffsdatum (ebenfalls nicht formatiert)
+    -   Zugriffsdatum (nur als Integer ausgeben)
 
     -   Berechtigungen (Dateimodus)
 
-    -   Anzahl der Hardlinks
+    -   Anzahl der Blöcke in Bytes
 
-    -   Dateigröße in Bytes
+    #### Blaupause für die Lösung
 
-3.  Schreiben Sie ein zweites Programm mit dessen Hilfe sie die
-    Berechtigungen des eben ausgelesenen Inodes auf den Modus 777, und
-    die UID auf 4711 setzen. Eine Sinnhaftigkeit dieser Veränderung sei
-    dahingestellt.
+    ``` {style="c"}
+    #include <ext2fs/ext2fs.h>
+    #include <ext2fs/ext2_fs.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <et/com_err.h>
+    #include <stdint.h>
+
+    static const char DEV[] = "/dev/loop0p1";
+    static const int INODE = ???;
+
+    int main(int argc, char *argv[]){
+        errcode_t err;
+        struct struct_ext2_filsys *fs;
+        struct ext2_inode inode;
+
+        err = ext2fs_open(DEV, EXT2_FLAG_RW, 0, 0, unix_io_manager, &fs);
+        if (err){
+            if (err == 13) {
+                printf("[ext2fs_open] Insufficient permissions\n");
+            } else {
+                printf("[ext2fs_open] Error number: %ld\n", err);
+            }
+            return EXIT_FAILURE;
+        }
+
+        ???
+        err = ext2fs_read_inode(fs, INODE, &inode);
+        if (err){
+            printf("[ext2fs_read_inode] Could not read inode %d\n", INODE);
+            return EXIT_FAILURE;
+        }
+
+        /* Hier printf-Statements einfuegen. 
+            inode.i_uid -> User-id (integer)
+            inode.i_mtime -> Modifikationsdatum (integer)
+            inode.i_atime -> Zugriffsdatum (integer)
+            inode.i_mode ->Berechtigungen (integer, oktal!)
+            inode.i_blocks -> Blockanzahl (integer) */
+        ???
+
+        err = ext2fs_close(fs);
+        if (err){
+            printf("[ext2fs_close] Error number: %ld\n", err);
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
+            
+    ```
 
 Blockgruppen Layout von Ext4
 ============================
@@ -356,6 +415,90 @@ Datenblock Bitmap & 1 Block\
 Inode Bitmap & 1 Block\
 Inode Tabelle & j Blöcke (Im Test-Dateisystem 8 1KiB-Blöcke)\
 Datenblöcke & Der Rest\
+
+Ext4-API-Referenz
+=================
+
+Im Folgenden einige Auszüge aus der offiziellen API-Referenz für das
+Ext4-Dateisystem.
+
+Öffnen eines ext4-Dateisystems
+------------------------------
+
+    Most libext2fs functions take a filesystem handle of type 'ext2_filsys'.
+    A filesystem handle is created either by opening an existing function
+    using 'ext2fs_open', or by initializing a new filesystem using
+    'ext2fs_initialize'.
+
+    -- Function: errcode_t ext2fs_open (const char *NAME, int FLAGS, int
+    SUPERBLOCK, int BLOCK_SIZE, io_manager MANAGER, ext2_filsys
+    *RET_FS)
+
+    Opens a filesystem named NAME, using the the io_manager MANAGER to
+    define the input/output routines needed to read and write the
+    filesystem.  In the case of the 'unix_io' io_manager, NAME is
+    interpreted as the Unix filename of the filesystem image.  This is
+    often a device file, such as '/dev/hda1'.
+
+    The SUPERBLOCK parameter specifies the block number of the
+    superblock which should be used when opening the filesystem.  If
+    SUPERBLOCK is zero, 'ext2fs_open' will use the primary superblock
+    located at offset 1024 bytes from the start of the filesystem
+    image.
+
+    The BLOCK_SIZE parameter specifies the block size used by the
+    filesystem.  Normally this is determined automatically from the
+    filesystem uperblock.  If BLOCK_SIZE is non-zero, it must match the
+    block size found in the superblock, or the error
+    'EXT2_ET_UNEXPECTED_BLOCK_SIZE' will be returned.  The BLOCK_SIZE
+    parameter is also used to help fund the superblock when SUPERBLOCK
+    is non-zero.
+
+    The FLAGS argument contains a bitmask of flags which control how
+    the filesystem open should be handled.
+
+    'EXT2_FLAG_RW'
+    Open the filesystem for reading and writing.  Without this 
+    flag, the filesystem is opened for reading only.
+
+    'EXT2_FLAG_FORCE'
+    Open the filesystem regardless of the feature sets listed in
+    the superblock.
+
+Schließen eines Ext4-Dateisystems
+---------------------------------
+
+    -- Function: errcode_t ext2fs_flush (ext2_filsys FS)
+
+    Write any changes to the high-level filesystem data structures in
+    the FS filesystem.  The following data structures will be written
+    out:
+
+    * The filesystem superblock
+    * The filesystem group descriptors
+    * The filesystem bitmaps, if read in via 'ext2fs_read_bitmaps'.
+
+    -- Function: void ext2fs_free (ext2_filsys FS)
+
+    Close the io_manager abstraction for FS and release all memory
+    associated with the filesystem handle.
+
+    -- Function: errcode_t ext2fs_close (ext2_filsys FS)
+
+    Flush out any changes to the high-level filesystem data structures
+    using 'ext2fs_flush' if the filesystem is marked dirty; then close
+    and free the filesystem using 'ext2fs_free'.
+
+Lesen eines Inodes
+------------------
+
+    -- Function: errcode_t ext2fs_read_inode (ext2_filsys FS, ext2_ino_t
+    INO, struct ext2_inode *INODE)
+    Read the inode number INO into INODE.
+
+    -- Function: errcode_t ext2fs_write_inode (ext2_filsys FS, ext2_ino_t
+    INO, struct ext2_inode *INODE)
+    Write INODE to inode INO. 
 
 [^1]: Tatsächlich werden Sie jedoch auf einem 64-Bit-System arbeiten
 
